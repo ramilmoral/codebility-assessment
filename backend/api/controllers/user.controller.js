@@ -17,7 +17,7 @@ const login = (req, res, next) => {
     .select('+password')
     .exec()
     .then((result) => {
-      // Respond if user is not found thru email
+      // Respond if user is not found thru username
       if (!result) {
         throw {
           status: 401,
@@ -26,10 +26,10 @@ const login = (req, res, next) => {
       }
       user = result;
 
-      // if account found hash the request password
+      // if user found verify password with hash
       return Argon.verify(user.password, req.body.password);
     })
-    // Verify password
+    // Check password
     .then(async (password_matched) => {
       // Check if passwords mismatched
       if (!password_matched) {
@@ -68,7 +68,7 @@ const login = (req, res, next) => {
         res.status(err.status).json(err);
       } else {
         res.status(500).json({
-          message: 'Interal server error',
+          message: ERROR.INTERNAL_ERROR,
           error: {
             message: err.message,
             stack: err.stack,
@@ -80,37 +80,45 @@ const login = (req, res, next) => {
 
 // Register a user account
 const register = async (req, res, next) => {
-  userModel
+  // Make sure that the username doesn't exists on database
+  const usernameAlreadyExist = await userModel
     .findOne({
       userName: req.body.userName,
     })
     .exec()
-    .then((account) => {
-      if (account) return true;
-      if (account?.length >= 1) {
-        return res.status(409).json({
-          message: 'email already exist',
-        });
-      }
-      Argon.hash(req.body.password).then((hash) => {
-        const account = new userModel({
-          userName: req.body.userName,
-          password: hash,
-          lastName: req.body.lastName,
-          firstName: req.body.firstName,
-        });
-        account
-          .save()
-          .then((result) => {
-            res.status(201).json({
-              message: 'New account has been created!',
-            });
-          })
-          .catch((err) => {
-            res.status(500).json({
-              error: err,
-            });
-          });
+    .then((user) => {
+      if (user) return true;
+    });
+
+  if (usernameAlreadyExist == true) {
+    return res.status(409).json({
+      name: 'ValidationError',
+      message: ERROR.ALREADY_EXIST_USERNAME,
+    });
+  }
+
+  // apply password hashing for new user
+  const hashed_password = await Argon.hash(req.body.password);
+
+  // create schema for new user
+  const account = new userModel({
+    userName: req.body.userName,
+    password: hashed_password,
+    lastName: req.body.lastName,
+    firstName: req.body.firstName,
+  });
+
+  // save new user
+  await account
+    .save()
+    .then((result) => {
+      res.status(201).json({
+        message: SUCCESS.CREATE,
+      });
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
       });
     });
 };

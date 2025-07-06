@@ -13,7 +13,7 @@ const Authenticate = (req, res, next) => {
     if (decodedToken.user_id !== req.params.userId)
       return reject.authFailed(res);
 
-    // Proceed if admin
+    // send the decoded token
     req.userData = decodedToken;
     next();
   });
