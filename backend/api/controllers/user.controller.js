@@ -1,12 +1,7 @@
-const dotenv = require('dotenv');
 const Argon = require('argon2');
-const Mongoose = require('mongoose');
 const jwtGenerator = require('../helpers/jwt.generator');
 const userModel = require('../models/user.model');
 const { ERROR, SUCCESS } = require('../enums/auth.enums');
-
-// Load env vars
-dotenv.config();
 
 // Login
 const login = (req, res, next) => {
