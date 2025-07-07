@@ -4,7 +4,7 @@ const weatherRoute = require('./weather.route');
 
 const router = express.Router();
 
-router.use('/user', userRoute);
+router.use('/auth', userRoute);
 router.use('/weather', weatherRoute);
 
 module.exports = router;
